@@ -33,12 +33,24 @@ def pad_sents_char(sents, char_pad_token):
     ###
     ###     You should NOT use the method `pad_sents()` below because of the way it handles 
     ###     padding and unknown words.
-
-
-    ### END YOUR CODE
+    sent_length_max = max(len(sentence) for sentence in sents)
+    padded_word = [char_pad_token] * max_word_length
+    
+    sents_padded = []
+    for sentence in sents:
+        padded_words = []
+        for word in sentence:
+            if len(word) > max_word_length:
+                padded_words.append(word[:max_word_length])
+            else:
+                padded_words.append(word + [char_pad_token] *
+                                    (max_word_length - len(word)))
+        sents_padded.append(padded_words + [padded_word] *
+                            (sent_length_max - len(padded_words)))
 
     return sents_padded
 
+    ### END YOUR CODE
 
 def pad_sents(sents, pad_token):
     """ Pad list of sentences according to the longest sentence in the batch.

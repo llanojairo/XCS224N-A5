@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import torch
 import torch.nn as nn
 
 
@@ -9,8 +10,8 @@ import torch.nn as nn
 #   `Highway` in the file `highway.py`
 # Uncomment the following two imports once you're ready to run part 1(f)
 
-# from cnn import CNN
-# from highway import Highway
+from cnn import CNN
+from highway import Highway
 
 # End "do not change" 
 
@@ -18,7 +19,6 @@ class ModelEmbeddings(nn.Module):
     """
     Class that converts input words to their CNN-based embeddings.
     """
-
     def __init__(self, embed_size, vocab):
         """
         Init the Embedding layer for one language
@@ -27,13 +27,18 @@ class ModelEmbeddings(nn.Module):
         """
         super(ModelEmbeddings, self).__init__()
 
-        ## A4 code
-        # pad_token_idx = vocab.src['<pad>']
-        # self.embeddings = nn.Embedding(len(vocab.src), embed_size, padding_idx=pad_token_idx)
-        ## End A4 code
-
         ### YOUR CODE HERE for part 1f
+        pad_token_idx = vocab.char2id['<pad>']
+        self.embed_size = embed_size
+        char_embed_size = 50
 
+        self.char_embedding = nn.Embedding(len(vocab.char2id), 
+            char_embed_size, 
+            pad_token_idx)
+
+        self.convNN = CNN(filters_num=self.embed_size)
+        self.highway = Highway(size_embedding=self.embed_size)
+        self.dropout = nn.Dropout(p=0.3)
         ### END YOUR CODE
 
     def forward(self, input_tensor):
@@ -45,11 +50,18 @@ class ModelEmbeddings(nn.Module):
         @param output: Tensor of shape (sentence_length, batch_size, embed_size), containing the 
             CNN-based embeddings for each word of the sentences in the batch
         """
-        ## A4 code
-        # output = self.embeddings(input)
-        # return output
-        ## End A4 code
-
         ### YOUR CODE HERE for part 1f
+        emb_word_list = []
 
+        for padded_idx in input_tensor:
+            embedding = self.char_embedding(padded_idx)
+            reshaped_emb = torch.transpose(embedding, dim0=-1, dim1=-2)
+            convl_out = self.convNN(reshaped_emb)
+            highway = self.highway(convl_out)
+            emb_word = self.dropout(highway)
+            emb_word_list.append(emb_word)
+
+        word_emb_f = torch.stack(emb_word_list)
+
+        return word_emb_f
         ### END YOUR CODE
